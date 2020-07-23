@@ -6,14 +6,8 @@ script.addTarget('libs', libScript.getTarget('libs'))
 script.addDefaultTarget(libScript.getDefaultTarget())
 libScript.execute()
 
-testScript = script.get(script.cwd('test/build.cake'))
-script.addTarget('objects', testScript.getTarget('objects'))
-script.addDefaultTarget(testScript.getDefaultTarget())
-testScript.execute()
-
 projects = [
   libScript.getResult('project'),
-  testScript.getResult('project'),
 ]
 
 

@@ -202,6 +202,46 @@ void cppcoro::detail::lightweight_manual_reset_event::wait() noexcept
 	}
 }
 
+void cppcoro::detail::lightweight_manual_reset_event::waitSome(std::function<bool()> inSpareTime) noexcept
+{
+	// Wait in a loop as futex() can have spurious wake-ups.
+	int oldValue = m_value.load(std::memory_order_acquire);
+	while (oldValue == 0)
+	{
+        struct timespec tv;
+        tv.tv_sec = 0;
+        tv.tv_nsec = 50000000L;
+		int result = local::futex(
+			reinterpret_cast<int*>(&m_value),
+			FUTEX_WAIT_PRIVATE,
+			oldValue,
+			&tv,
+			nullptr,
+			0);
+		if (result == -1)
+		{
+			if (errno == EAGAIN)
+			{
+				// The state was changed from zero before we could wait.
+				// Must have been changed to 1.
+				return;
+			}
+			if (errno == ETIMEDOUT) {
+			    for(int i=0; i<10000; i++) {
+			        if (!inSpareTime()) {
+                        break;
+			        }
+			    }
+			}
+
+			// Other errors we'll treat as transient and just read the
+			// value and go around the loop again.
+		}
+
+		oldValue = m_value.load(std::memory_order_acquire);
+	}
+}
+
 #else
 
 cppcoro::detail::lightweight_manual_reset_event::lightweight_manual_reset_event(bool initiallySet)

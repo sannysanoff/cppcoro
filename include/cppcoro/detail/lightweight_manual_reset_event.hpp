@@ -6,6 +6,7 @@
 #define CPPCORO_DETAIL_LIGHTWEIGHT_MANUAL_RESET_EVENT_HPP_INCLUDED
 
 #include <cppcoro/config.hpp>
+#include <functional>
 
 #if CPPCORO_OS_LINUX || (CPPCORO_OS_WINNT >= 0x0602)
 # include <atomic>
@@ -34,6 +35,8 @@ namespace cppcoro
 			void reset() noexcept;
 
 			void wait() noexcept;
+
+			void waitSome(std::function<bool()> inSpareTime) noexcept;
 
 		private:
 
